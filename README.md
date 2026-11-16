@@ -138,17 +138,14 @@ python src/main.py
 
 > **Nota:** Execute sempre a partir da pasta raiz do repositório (`cd valorant-system-optimizer && python src/main.py`) ou configure o `PYTHONPATH` adequadamente.
 
-### Por que não há um executável (.exe) pronto?
+Onde baixar o executável (.exe) pronto?
+O executável já está compilado e disponível diretamente neste repositório:
 
-O executável não está incluído neste repositório porque:
+Basta baixar o arquivo .exe da versão mais recente e executar.
 
-- Executáveis não assinados digitalmente são **bloqueados pelo Windows SmartScreen** por padrão.
-- O código-fonte é aberto e pode ser auditado por qualquer pessoa.
-- Você pode gerar seu próprio `.exe` localmente usando o PyInstaller (veja abaixo).
+Como executáveis não assinados digitalmente podem acionar um aviso do Windows SmartScreen, clique em "Mais informações" e depois em "Executar assim mesmo".
 
-### Como Compilar o Executável (`.exe`) e o Instalador
-
-#### Gerar o executável portátil (`.exe`)
+O código-fonte permanece aberto neste repositório e pode ser auditado ou compilado manualmente por qualquer pessoa.
 
 O projeto inclui um script `build_exe.bat` que automatiza todo o processo:
 
