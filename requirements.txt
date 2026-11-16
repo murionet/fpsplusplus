@@ -1,0 +1,7 @@
+# Valorant System Optimizer - Dependências
+# Python 3.10+
+
+customtkinter>=5.2.2
+psutil>=5.9.8
+Pillow>=10.4.0
+pyinstaller>=6.21.0
