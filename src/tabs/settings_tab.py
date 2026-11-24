@@ -222,3 +222,9 @@ class SettingsTab(ctk.CTkFrame):
         if set_valorant_config_path(""):
             self._atualizar_label_caminho()
             self._set_status("Caminho redefinido para padrao.", COLOR_SUCCESS)
+
+    def refresh_translations(self):
+        """Reconstroi a UI da aba com os textos do idioma corrente."""
+        for widget in self.winfo_children():
+            widget.destroy()
+        self._build_ui()

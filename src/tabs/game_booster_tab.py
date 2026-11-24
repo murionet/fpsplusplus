@@ -8,7 +8,7 @@ Aba 2: Game Booster & RAM
 import os
 import logging
 import threading
-from typing import Optional
+from typing import Optional, Tuple
 import customtkinter as ctk
 import psutil
 from utils import ERROS_SEM_SOLUCAO_MANUAL
@@ -274,3 +274,9 @@ class GameBoosterTab(ctk.CTkFrame):
         except Exception as exc:
             return False, f"Ferramenta EmptyStandbyList não encontrada: {exc}. "
             "Recomendamos baixar o RamMap (Sysinternals) e usar 'Empty Standby List' manualmente."
+
+    def refresh_translations(self):
+        """Reconstroi a UI da aba com os textos do idioma corrente."""
+        for widget in self.winfo_children():
+            widget.destroy()
+        self._build_ui()

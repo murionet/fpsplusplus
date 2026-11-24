@@ -191,7 +191,7 @@ class NetworkTab(ctk.CTkFrame):
         if self.status_callback:
             self.status_callback(message, color)
 
-    def _mostrar_instrucao_manual_network(self, tipo_acao: str, erro: str = ""):
+    def _mostrar_instrucao_manual_network(self, tipo_acao: str, erro_detalhe: str = ""):
         instrucao = INSTRUCOES_MANUAIS_NETWORK.get(tipo_acao, ERROS_SEM_SOLUCAO_MANUAL)
         mensagem_completa = f"{instrucao}\n\nDetalhe do erro: {erro_detalhe}"
         self._set_status(mensagem_completa, COLOR_WARNING)
@@ -294,7 +294,7 @@ class NetworkTab(ctk.CTkFrame):
         erros = 0
         mensagens = []
         for cmd in comandos:
-            ok, msg = run_cmd(f"ipconfig {cmd}", timeout=30)
+            ok, msg = run_cmd(cmd, timeout=30)
             if ok:
                 sucessos += 1
                 mensagens.append(f"{cmd}: OK")
@@ -337,4 +337,10 @@ class NetworkTab(ctk.CTkFrame):
         except Exception as exc:  # pylint: disable=broad-except
             self._mostrar_instrucao_manual_network("tcp_ip", str(exc))
             logger.error("Erro na otimização TCP: %s", exc)
+
+    def refresh_translations(self):
+        """Reconstroi a UI da aba com os textos do idioma corrente."""
+        for widget in self.winfo_children():
+            widget.destroy()
+        self._build_ui()
 

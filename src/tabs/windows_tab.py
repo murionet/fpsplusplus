@@ -326,3 +326,9 @@ class WindowsTab(ctk.CTkFrame):
             "Modo de Jogo: certifique-se de que o 'Modo de Jogo' do Windows está Ativado."
         )
         self._set_status(diagnostico, COLOR_TEXT_MUTED)
+
+    def refresh_translations(self):
+        """Reconstroi a UI da aba com os textos do idioma corrente."""
+        for widget in self.winfo_children():
+            widget.destroy()
+        self._build_ui()

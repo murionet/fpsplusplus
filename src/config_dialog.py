@@ -13,6 +13,7 @@ from styles import (
     FONT_FAMILY, FONT_SIZE_BODY, FONT_SIZE_SMALL, BUTTON_HEIGHT, BUTTON_CORNER_RADIUS
 )
 from settings_manager import set_valorant_config_path, get_valorant_config_path
+from utils import select_valorant_folder_gui
 
 
 class ValorantConfigDialog(ctk.CTkToplevel):
@@ -81,12 +82,27 @@ class ValorantConfigDialog(ctk.CTkToplevel):
         self.entry_path = ctk.CTkEntry(
             self.container,
             placeholder_text="Cole aqui o caminho da pasta do VALORANT",
-            width=450,
+            width=380,
             height=40,
             corner_radius=BUTTON_CORNER_RADIUS,
             font=(FONT_FAMILY, 12),
         )
-        self.entry_path.grid(row=2, column=0, pady=(0, 10), padx=30, sticky="ew")
+        self.entry_path.grid(row=2, column=0, pady=(0, 10), padx=(30, 5), sticky="ew")
+
+        self.btn_procurar = ctk.CTkButton(
+            self.container,
+            text="Procurar…",
+            width=80,
+            height=40,
+            corner_radius=BUTTON_CORNER_RADIUS,
+            fg_color=COLOR_SURFACE,
+            hover_color="#2a2a33",
+            text_color=COLOR_TEXT,
+            font=(FONT_FAMILY, 12, "bold"),
+            command=self._on_procurar,
+        )
+        self.btn_procurar.grid(row=2, column=0, pady=(0, 10), padx=(5, 30), sticky="e")
+        self.container.grid_columnconfigure(0, weight=1)
 
         self.lbl_feedback = ctk.CTkLabel(
             self.container,
@@ -136,6 +152,16 @@ class ValorantConfigDialog(ctk.CTkToplevel):
 
         self.entry_path.bind("<Return>", lambda e: self._on_save())
 
+    def _on_procurar(self):
+        """Abre o seletor de pastas nativo do Windows e preenche o campo."""
+        pasta = select_valorant_folder_gui(parent=self)
+        if pasta:
+            self.entry_path.delete(0, "end")
+            self.entry_path.insert(0, pasta)
+            self.lbl_feedback.configure(
+                text=f"Pasta selecionada: {pasta}", text_color=COLOR_SUCCESS
+            )
+
     def _validar_caminho(self, caminho: str) -> bool:
         if not caminho or not caminho.strip():
             return False
@@ -160,15 +186,25 @@ class ValorantConfigDialog(ctk.CTkToplevel):
         return False
 
     def _obter_config_root(self, caminho: str) -> str | None:
+        """
+        Resolve a pasta Saved\\Config a partir do caminho informado pelo usuário.
+        O usuário pode informar a raiz da instalação (ex: D:\\Riot Games\\VALORANT)
+        ou já a pasta Saved\\Config diretamente.
+        """
         if not caminho or not caminho.strip():
             return None
 
         caminho = caminho.strip()
 
-        if os.path.isdir(os.path.join(caminho, "GameUserSettings.ini")) or \
+        if not os.path.isdir(caminho):
+            return None
+
+        # Se o usuário já apontou diretamente para a pasta Saved\Config
+        if os.path.isfile(os.path.join(caminho, "GameUserSettings.ini")) or \
            any(d.startswith("{") for d in os.listdir(caminho) if os.path.isdir(os.path.join(caminho, d))):
             return caminho
 
+        # Caso contrário, procurar Saved\Config dentro do caminho informado
         possiveis = [
             os.path.join(caminho, "Saved", "Config"),
             os.path.join(caminho, "VALORANT", "Saved", "Config"),
@@ -178,10 +214,8 @@ class ValorantConfigDialog(ctk.CTkToplevel):
             if os.path.isdir(p):
                 return p
 
-        if os.path.isdir(caminho):
-            return caminho
-
-        return None
+        # Fallback: retorna o próprio caminho (o app irá re-resolver depois)
+        return caminho
 
     def _on_save(self):
         caminho = self.entry_path.get().strip()

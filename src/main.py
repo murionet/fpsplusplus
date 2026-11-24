@@ -144,6 +144,25 @@ class ValorantOptimizerApp(ctk.CTk):
         )
         self.btn_lang.grid(row=0, column=2, rowspan=2, padx=PADDING_MAIN, pady=12, sticky="e")
 
+        # Guarda a fábrica de tabs para poder recriá-las ao trocar de idioma.
+        # Cada entrada: (translation_key, ClasseDaTab, instancia_da_tab)
+        self._tab_specs = [
+            ("tab_files", FileCacheTab),
+            ("tab_booster", GameBoosterTab),
+            ("tab_network", NetworkTab),
+            ("tab_windows", WindowsTab),
+            ("tab_settings", SettingsTab),
+        ]
+        self._tab_instances: dict = {}  # translation_key -> instancia da tab
+
+        self._build_tabs()
+
+    def _build_tabs(self):
+        """Cria (ou recria) o tabview e todas as abas com os títulos no idioma atual."""
+        # Se já existe um tabview, destrói antes de recriar.
+        if hasattr(self, "tabview") and self.tabview is not None:
+            self.tabview.destroy()
+
         self.tabview = ctk.CTkTabview(
             self,
             fg_color=COLOR_BG,
@@ -154,31 +173,14 @@ class ValorantOptimizerApp(ctk.CTk):
         )
         self.tabview.pack(fill="both", expand=True, padx=PADDING_MAIN, pady=(0, PADDING_MAIN))
 
-        self.tab_files = self.tabview.add(t("tab_files"))
-        self.tab_booster = self.tabview.add(t("tab_booster"))
-        self.tab_network = self.tabview.add(t("tab_network"))
-        self.tab_windows = self.tabview.add(t("tab_windows"))
-        self.tab_settings = self.tabview.add(t("tab_settings"))
-
-        for tab in (self.tab_files, self.tab_booster, self.tab_network,
-                    self.tab_windows, self.tab_settings):
-            tab.grid_columnconfigure(0, weight=1)
-            tab.grid_rowconfigure(0, weight=1)
-
-        self.file_cache_tab = FileCacheTab(self.tab_files, self._set_status)
-        self.file_cache_tab.grid(row=0, column=0, sticky="nsew")
-
-        self.game_booster_tab = GameBoosterTab(self.tab_booster, self._set_status)
-        self.game_booster_tab.grid(row=0, column=0, sticky="nsew")
-
-        self.network_tab = NetworkTab(self.tab_network, self._set_status)
-        self.network_tab.grid(row=0, column=0, sticky="nsew")
-
-        self.windows_tab = WindowsTab(self.tab_windows, self._set_status)
-        self.windows_tab.grid(row=0, column=0, sticky="nsew")
-
-        self.settings_tab = SettingsTab(self.tab_settings, self._set_status)
-        self.settings_tab.grid(row=0, column=0, sticky="nsew")
+        self._tab_instances.clear()
+        for key, cls in self._tab_specs:
+            tab_frame = self.tabview.add(t(key))
+            tab_frame.grid_columnconfigure(0, weight=1)
+            tab_frame.grid_rowconfigure(0, weight=1)
+            instance = cls(tab_frame, self._set_status)
+            instance.grid(row=0, column=0, sticky="nsew")
+            self._tab_instances[key] = instance
 
         self.status_frame = ctk.CTkFrame(self, fg_color=COLOR_BG, corner_radius=0)
         self.status_frame.pack(fill="x", padx=PADDING_MAIN, pady=(0, 10))
@@ -242,6 +244,15 @@ class ValorantOptimizerApp(ctk.CTk):
         self.lbl_subtitle.configure(text=t("app_subtitle"))
         self.btn_lang.configure(text="EN" if get_language() == "pt" else "PT")
         self.btn_config_path.configure(text=t("btn_config_path"))
+
+        # Recria as abas com os novos títulos do idioma selecionado.
+        self._build_tabs()
+
+        # Notifica cada tab para atualizar seus textos internos.
+        for instance in self._tab_instances.values():
+            if hasattr(instance, "refresh_translations"):
+                instance.refresh_translations()
+
         self._set_status(self.status_var.get(), COLOR_TEXT_MUTED)
 
     def _abrir_dialog_caminho(self):

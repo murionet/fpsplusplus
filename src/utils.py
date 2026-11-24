@@ -19,6 +19,11 @@ try:
 except Exception:
     fd = None
 
+try:
+    import psutil
+except Exception:
+    psutil = None
+
 logger = logging.getLogger("ValorantOptimizer")
 
 # ============================================================================
@@ -31,6 +36,17 @@ COMMON_VALORANT_PATHS = [
     r"C:\Games\Riot Games\VALORANT",
     r"D:\Games\Riot Games\VALORANT",
 ]
+
+# Nome do executável do VALORANT e constantes de prioridade do Windows.
+# Definidos aqui para que utils.py seja autossuficiente e não dependa de
+# game_booster_tab.py, evitando NameError em set_valorant_priority_high().
+VALORANT_EXE = "VALORANT-Win64-Shipping.exe"
+if psutil is not None:
+    PRIORIDADE_ALTA = psutil.HIGH_PRIORITY_CLASS
+    PRIORIDADE_BAIXA = psutil.BELOW_NORMAL_PRIORITY_CLASS
+else:
+    PRIORIDADE_ALTA = 128   # HIGH_PRIORITY_CLASS (Windows)
+    PRIORIDADE_BAIXA = 16384  # BELOW_NORMAL_PRIORITY_CLASS (Windows)
 
 
 def is_admin() -> bool:
@@ -87,10 +103,28 @@ def run_cmd(command: str, shell: bool = True, timeout: int = 30) -> Tuple[bool, 
         return False, str(exc)
 
 
-def find_valorant_config_dir() -> Optional[str]:
+def find_valorant_config_dir(custom_root: Optional[str] = None) -> Optional[str]:
     """
-    Localiza o diretório de configurações do VALORANT em %localappdata%.
+    Localiza o diretório de configurações do VALORANT.
+
+    Se custom_root for fornecido e for um diretório válido, procura Saved\\Config
+    dentro dele. Caso contrário, usa o padrão %LOCALAPPDATA%\\VALORANT\\Saved\\Config.
+
+    Isso torna o caminho configurado pelo usuário realmente utilizado pelo app,
+    em vez de apenas ser salvo e ignorado.
     """
+    # 1. Caminho customizado informado pelo usuário (alta prioridade)
+    if custom_root and os.path.isdir(custom_root):
+        candidatos = [
+            os.path.join(custom_root, "Saved", "Config"),
+            os.path.join(custom_root, "VALORANT", "Saved", "Config"),
+            custom_root,  # o usuário pode já ter selecionado a pasta Saved\Config diretamente
+        ]
+        for cand in candidatos:
+            if os.path.isdir(cand):
+                return cand
+
+    # 2. Caminho padrão do Windows (%LOCALAPPDATA%)
     local_app_data = os.environ.get("LOCALAPPDATA")
     if not local_app_data:
         return None
